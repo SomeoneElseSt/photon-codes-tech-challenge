@@ -10,6 +10,7 @@
     "@photon-ai/imessage-kit": "^1.0.0",
     "better-sqlite3": "^12.5.0",
     "dotenv": "^17.2.3",
+    "node-typedstream": "^1.4.1",
     "openai": "^6.9.1"
   },
   "devDependencies": {
