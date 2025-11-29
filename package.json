@@ -8,6 +8,6 @@
   "license": "ISC",
   "dependencies": {
     "@photon-ai/imessage-kit": "^1.0.0",
-    "better-sqlite3": "^11.0.0"
+    "better-sqlite3": "^12.5.0"
   }
 }
