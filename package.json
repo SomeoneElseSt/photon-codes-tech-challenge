@@ -1,0 +1,13 @@
+{
+  "name": "photon-codes-tech-challenge",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@photon-ai/imessage-kit": "^1.0.0",
+    "better-sqlite3": "^11.0.0"
+  }
+}
