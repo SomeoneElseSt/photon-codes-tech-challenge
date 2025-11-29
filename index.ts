@@ -136,6 +136,8 @@ async function main() {
 
   await sdk.startWatching({
     onNewMessage: async (msg: Message) => {
+      console.log('[Message detected]', msg.isFromMe ? 'Outgoing' : 'Incoming', 'from:', msg.sender)
+
       if (msg.isFromMe) {
         handleOutgoingMessage(msg)
         return
@@ -153,8 +155,8 @@ async function main() {
   console.log('User:', USER_PHONE)
   console.log('Agent:', AGENT_ID)
   console.log('Status: Watching for messages')
-  console.log('\nTo activate coaching, message', AGENT_ID, 'with:')
-  console.log('"coach me on <contact> - help me with <goal>"')
+  console.log('\nTo activate: message', AGENT_ID)
+  console.log('Format: "coach me on <phone number> - help me with <goal>"')
 
   process.on('SIGINT', async () => {
     console.log('\nStopping...')
