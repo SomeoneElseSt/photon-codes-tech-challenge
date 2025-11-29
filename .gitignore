@@ -6,3 +6,6 @@ test.ts
 
 # Claude for code rules and book-keeping
 CLAUDE.md 
+
+# envs
+.env
