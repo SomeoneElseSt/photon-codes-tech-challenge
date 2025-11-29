@@ -1,7 +1,10 @@
 import 'dotenv/config'
 import { IMessageSDK, type Message } from '@photon-ai/imessage-kit'
 import OpenAI from 'openai'
+import { existsSync } from 'fs'
+import { homedir } from 'os'
 
+const IMESSAGE_DB_PATH = `${homedir()}/Library/Messages/chat.db`
 const USER_PHONE = process.env.USER_PHONE_NUMBER!
 const AGENT_ID = process.env.AGENT_IMESSAGE_ID!
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! })
@@ -115,31 +118,30 @@ function handleOutgoingMessage(msg: Message) {
   }
 }
 
-// Main
 async function main() {
+  if (!existsSync(IMESSAGE_DB_PATH)) {
+    console.error('Error: iMessage database not found at', IMESSAGE_DB_PATH)
+    console.error('Make sure you have Full Disk Access enabled for Terminal')
+    return
+  }
 
-  console.log("Starting backend.")
-  console.log("User: ${USER_PHONE}")
-  console.log("Agent ID: ${AGENT_ID}")
-  
   const sdk = new IMessageSDK({
     maxConcurrent: 5,
     watcher: {
       pollInterval: 2000,
       unreadOnly: false,
-      excludeOwnMessages: false  
+      excludeOwnMessages: false
     }
   })
 
   await sdk.startWatching({
     onNewMessage: async (msg: Message) => {
       if (msg.isFromMe) {
-        // User's outgoing message - track for context
         handleOutgoingMessage(msg)
-      } else {
-        // Incoming message - potentially coach
-        await handleIncomingMessage(sdk, msg)
+        return
       }
+
+      await handleIncomingMessage(sdk, msg)
     },
 
     onError: (error) => {
@@ -147,16 +149,19 @@ async function main() {
     }
   })
 
-  console.log('Watching for messages🔭...')
-  console.log(`\nTo activate: Message ${AGENT_ID} with "coach me on <the contact you need help with> - help me with X"`)
+  console.log('Backend started')
+  console.log('User:', USER_PHONE)
+  console.log('Agent:', AGENT_ID)
+  console.log('Status: Watching for messages')
+  console.log('\nTo activate coaching, message', AGENT_ID, 'with:')
+  console.log('"coach me on <contact> - help me with <goal>"')
 
-  // Shutdown
   process.on('SIGINT', async () => {
-    console.log('\n⏹️  Stopping...')
+    console.log('\nStopping...')
     sdk.stopWatching()
     await sdk.close()
     process.exit(0)
   })
 }
 
-main().catch(console.error)
+main()
