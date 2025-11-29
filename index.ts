@@ -67,34 +67,36 @@ Be concise and actionable. Format suggestions clearly.`
   return response.choices[0]?.message?.content || 'No coaching available'
 }
 
-async function handleIncomingMessage(sdk: IMessageSDK, msg: Message) {
-  // Deduplicate
+async function handleCommand(sdk: IMessageSDK, msg: Message) {
   if (processedMessageIds.has(msg.id)) return
   processedMessageIds.add(msg.id)
 
-  if (msg.sender === USER_PHONE && msg.chatId.includes(AGENT_ID)) {
-    const command = parseActivationCommand(msg.text || '')
+  console.log('[Command received]', msg.text)
 
-	// Activates coachign
-    if (command) {
-      activeSessions.set(command.contact, {
-        targetContact: command.contact,
-        coachingGoal: command.goal,
-        conversationHistory: []
-      })
+  const command = parseActivationCommand(msg.text || '')
+  if (!command) return
 
-      await sdk.send(USER_PHONE,
-        `Hi! Coaching activated for ${command.contact}\n\nContext: ${command.goal}\n\n Starting now 💬.`
-      )
-      return
-    }
+  activeSessions.set(command.contact, {
+    targetContact: command.contact,
+    coachingGoal: command.goal,
+    conversationHistory: []
+  })
 
-    return
-  }
+  console.log('[Coaching activated]', command.contact, '-', command.goal)
 
-  // Check if message is from an active coaching target
+  await sdk.send(USER_PHONE,
+    `Coaching activated for ${command.contact}\n\nGoal: ${command.goal}\n\nWatching for messages now.`
+  )
+}
+
+async function handleIncomingMessage(sdk: IMessageSDK, msg: Message) {
+  if (processedMessageIds.has(msg.id)) return
+  processedMessageIds.add(msg.id)
+
   const session = activeSessions.get(msg.sender)
   if (!session) return
+
+  console.log('[Coaching trigger]', msg.sender)
 
   session.conversationHistory.push(msg)
 
@@ -104,7 +106,7 @@ async function handleIncomingMessage(sdk: IMessageSDK, msg: Message) {
     session.coachingGoal
   )
 
-  await sdk.send(USER_PHONE, `💬 ${msg.sender} said: "${msg.text}"\n\n${coaching}`)
+  await sdk.send(USER_PHONE, `${msg.sender}: "${msg.text}"\n\n${coaching}`)
 }
 
 // Add outgoing messages to context
@@ -138,11 +140,19 @@ async function main() {
     onNewMessage: async (msg: Message) => {
       console.log('[Message detected]', msg.isFromMe ? 'Outgoing' : 'Incoming', 'from:', msg.sender)
 
+      // Check if message is to the agent
+      if (msg.chatId.includes(AGENT_ID)) {
+        await handleCommand(sdk, msg)
+        return
+      }
+
+      // User's outgoing message to coached contact (context)
       if (msg.isFromMe) {
         handleOutgoingMessage(msg)
         return
       }
 
+      // Incoming message from coached contact
       await handleIncomingMessage(sdk, msg)
     },
 
